@@ -9,21 +9,21 @@ K-Litho includes two tools: K-Litho-TCC and K-Litho-SOCS.
 
 ## Prerequisites
 
-before implementing K-Litho, make sure that [FFTW3](http://www.fftw.org/) and [LAPACK](http://www.netlib.org/lapack/) are installed.
+Before implementing K-Litho, make sure that [FFTW3](http://www.fftw.org/) and [LAPACK](http://www.netlib.org/lapack/) are installed.
 
 If these packages are not installed, install them using the appropriate commands for your Linux distribution:
 
-below are the installation methods for Ubuntu and CentOS.
+Below are the installation methods for Ubuntu and CentOS.
 
 For Ubuntu/Debian:
-$$$
+```
 sudo apt-get install liblapack-dev libfftw3-dev
-$$$
+```
 
 For CentOS/RHEL:
-$$$
+```
 sudo yum install lapack-devel fftw-devel
-$$$
+```
 
 ## K-Litho-TCC
 
@@ -34,10 +34,10 @@ You can set optical conditions such as mask, source, NA, and defocus.
 ### Compilation
 
 Move to the K-Litho-TCC directory and compile using the make command.
-$$$
+```
 cd K-Litho-TCC
 make
-$$$
+```
 
 After compilation, an executable file named "klitho_tcc" will be created.
 
@@ -54,14 +54,14 @@ The "mask" directory contains transmittance data of 1024x1024 for 10 test benche
 When using parametric sources such as annular or dipole, you can set parameters such as inner and outer radii without inputting a source file.
 
 A sample script for running K-Litho-TCC is provided in "test_tcc.sh". When running this script for the first time, grant execution permission with the following command:
-$$$
+```
 chmod +x test_tcc.sh
-$$$
+```
 
 Then, run it with the following command:
-$$$
+```
 ./test_tcc.sh
-$$$
+```
 
 ### Output Files
 
@@ -84,10 +84,10 @@ You can use the kernel files created by K-Litho-TCC as input kernels.
 ### Compilation
 
 Move to the K-Litho-SOCS directory and compile using the make command.
-$$$
+```
 cd K-Litho-SOCS
 make
-$$$
+```
 
 After compilation, an executable file named "klitho_socs" will be created.
 
@@ -96,14 +96,14 @@ After compilation, an executable file named "klitho_socs" will be created.
 You can specify simulation parameters when running the program. A sample script for running K-Litho-SOCS is provided in "test_socs.sh".
 
 A sample script for running K-Litho-SOCS is provided in "test_socs.sh". When running this script for the first time, grant execution permission with the following command:
-$$$
+```
 chmod +x test_socs.sh
-$$$
+```
 
 Then, run it with the following command:
-$$$
+```
 ./test_socs.sh
-$$$
+```
 
 ### Output Files
 
