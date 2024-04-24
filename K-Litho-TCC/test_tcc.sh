@@ -24,14 +24,13 @@ Offset=0.5
 OnXAxis=1
 
 ## for point source
-ptX=0.1
+ptX=0.6
 ptY=0.2
 
 InputSourcePath="./source/src_test1_size101.bin"
 
 NA=0.83
-Defocus=0.5
-Dose=1.0
+Defocus=0.5 # Defocus normalized by dividing by wavelength/(NA^2)
 NumKernels=3
 
 # execution

@@ -291,7 +291,7 @@ void calcTCC(int srcSize, vector<float>& src, int tccSize, vector<Complex>& tcc,
 }
 
 //Calculate the optical image in the frequency domain using TCC and mask
-void calcImage(vector<Complex>& imgf, vector<Complex>& msk, int tccSize, vector<Complex>& tcc, int Nx, int Ny, int Lx, int Ly, double dose){
+void calcImage(vector<Complex>& imgf, vector<Complex>& msk, int tccSize, vector<Complex>& tcc, int Nx, int Ny, int Lx, int Ly){
   int ht = (tccSize-1)/2;
   int Lxh = Lx/2;
   int Lyh = Ly/2;
@@ -307,10 +307,9 @@ void calcImage(vector<Complex>& imgf, vector<Complex>& msk, int tccSize, vector<
 		  }
 		}
 	  }
-	  imgf[(ny2+Lyh)*Lx+(nx2+Lxh)]=val*real(dose*dose);
+	  imgf[(ny2+Lyh)*Lx+(nx2+Lxh)]=val;
 	}
   }
-
 }
 
 extern "C" {
@@ -407,7 +406,7 @@ int calcKernels(vector<Complex>& tcc, int tccSize, int nk, vector<vector<Complex
 }
 
 bool extractCentralRegion(vector<float>& in, int inSizeX, int inSizeY, vector<float>& out, int outSizeX, int outSizeY) {
-  if (outSizeX > inSizeX || outSizeX > inSizeY) {
+  if (outSizeX > inSizeX || outSizeY > inSizeY) {
 	std::cerr << "Error: outSizeX and outSizeX must be less than or equal to inSizeX and inSizeY respectively." << std::endl;
 	return false;
   }
@@ -415,8 +414,8 @@ bool extractCentralRegion(vector<float>& in, int inSizeX, int inSizeY, vector<fl
   int startIdxX = inSizeX / 2 - outSizeX / 2;
   int startIdxY = inSizeY / 2 - outSizeX / 2;
 
-  // Copy the central outSizeX * outSizeX data from in to out
-  for (int y = 0; y < outSizeX; ++y) {
+  // Copy the central outSizeX * outSizeY data from in to out
+  for (int y = 0; y < outSizeY; ++y) {
 	for (int x = 0; x < outSizeX; ++x) {
 	  out[y * outSizeX + x] = in[(startIdxY + y) * inSizeX + (startIdxX + x)];
 	}
@@ -514,7 +513,7 @@ void FT_c2r(vector<Complex>& in, vector<float>& out, int sizeX, int sizeY, fftw_
   myShift(datar.data(),out.data(),sizeX,sizeY,false,false);
 }
 
-bool isSymmetricX(vector<float>& matrix, int width, int height) {
+bool isSymmetricY(vector<float>& matrix, int width, int height) {
   for (int y = 0; y < height / 2; ++y) {
 	for (int x = 0; x < width; ++x) {
 	  if (matrix[y * width + x] != matrix[(height - 1 - y) * width + x]) {
@@ -525,7 +524,7 @@ bool isSymmetricX(vector<float>& matrix, int width, int height) {
   return true;
 }
 
-bool isSymmetricY(vector<float>& matrix, int width, int height) {
+bool isSymmetricX(vector<float>& matrix, int width, int height) {
   for (int y = 0; y < height; ++y) {
 	for (int x = 0; x < width / 2; ++x) {
 	  if (matrix[y * width + x] != matrix[y * width + (width - 1 - x)]) {
@@ -645,7 +644,7 @@ int main(int argc, char* argv[]) {
   cout << "Number of Kernels: " << nk << endl << endl;
 
   // Validate parameters
-  if (tccSize <= nk) {
+  if (tccSize < nk) {
     cerr << "Error: Number of kernels cannot be greater than TCC size." << endl;
     return 1;
   }
@@ -657,7 +656,7 @@ int main(int argc, char* argv[]) {
   
   // Allocate memory for data structures
   vector<double> realDataLxy(Lxy, 0);
-  vector<Complex> complexDataLxy(Ly * (Lx / 2 + 2), 0);
+  vector<Complex> complexDataLxy(Ly * (Lx / 2 + 1), 0);
   vector<Complex> mskf(Lxy);
   vector<float> inMsk(maskSizeX * maskSizeY);
   vector<float> msk(Lxy, 0);
@@ -751,7 +750,7 @@ int main(int argc, char* argv[]) {
   for (int y = 0; y < maskSizeY; y++) {
     for (int x = 0; x < maskSizeX; x++) {
       if (inMsk[y * maskSizeX + x] != 0) {
-        msk[(y + difYh) * Lx + x + difXh] = inMsk[y * maskSizeX + x];
+        msk[(y + difYh) * Lx + x + difXh] = inMsk[y * maskSizeX + x] * dose;
       }
     }
   }
@@ -762,7 +761,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   writeFloatArrayToPNGWithGrayscale(maskSizeX, maskSizeY, inMsk, min, max, "./out/mask.png");
-
+  
   // Calculate FFT of mask
   cout << endl << "-----------------------------------------------------------------" << endl;
   cout << "Calculating FFT Mask..." << endl;
@@ -771,15 +770,9 @@ int main(int argc, char* argv[]) {
   // Calculate TCC matrix
   cout << endl << "-----------------------------------------------------------------" << endl;
   cout << "Starting calcTCC..." << endl;
-  auto st = system_clock::now();
   for(int i=0; i<1; i++){
 	calcTCC(srcSize, src, tccSize, tcc, outerSigma, NA, defocus, srcSymX, srcSymY, Nx, Ny, Lx, Ly, lambda);
   }
-  auto ed = system_clock::now();
-  auto d = ed - st;
-  auto m = duration_cast<chrono::microseconds>(d).count();
-  cout << "TCC Execution Time: " << m * 1.0e-06 << " sec." << endl;
-
   vector<float> tccReal(tccSize * tccSize), tccImag(tccSize * tccSize);
   for (int i = 0; i < tccSize * tccSize; i++) {
     tccReal[i] = tcc[i].real();
@@ -800,7 +793,7 @@ int main(int argc, char* argv[]) {
   // Calculate optical image in Fourier domain
   cout << endl << "-----------------------------------------------------------------" << endl;
   cout << "Starting calcImage..." << endl;
-  calcImage(imgf, mskf, tccSize, tcc, Nx, Ny, Lx, Ly, dose);
+  calcImage(imgf, mskf, tccSize, tcc, Nx, Ny, Lx, Ly);
 
   // Inverse Fourier transform of optical image
   FT_c2r(imgf, img, Lx, Ly, LxyC2R_plan, complexDataLxy, realDataLxy);
@@ -815,17 +808,19 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   writeFloatArrayToPNGWithContinuousColor(Lx, Ly, img, "./out/image.png", min, max);
-  writeFloatArrayToPNGWith7Colors(Lx, Ly, img, "./out/image_s.png", min, TARGET_INTENSITY);
+  writeFloatArrayToPNGWith7Colors(Lx, Ly, img, "./out/image_s.png", 0, TARGET_INTENSITY);
 
-  // output image only mask region
-  // vector<float> dataMaskSize(maskSizeX * maskSizeY);
-  // extractCentralRegion(img, Lx, Ly, dataMaskSize, maskSizeX, maskSizeY);
-  // if (!writeFloatArrayToBinary("./out/image.bin", dataMaskSize, maskSizeX*maskSizeY)) {
+  //output image only mask region
+  // vector<float> imgMaskSize(maskSizeX * maskSizeY);
+  // extractCentralRegion(img, Lx, Ly, imgMaskSize, maskSizeX, maskSizeY);
+  // if (!writeFloatArrayToBinary("./out/image.bin", imgMaskSize, maskSizeX*maskSizeY)) {
   //   cerr << "Error: Failed to write image data to file: ./out/image.bin" << endl;
   //   return 1;
   // }
-  // writeFloatArrayToPNGWithContinuousColor(maskSizeX, maskSizeY, dataMaskSize, "./out/image.png", min, max);
-  // writeFloatArrayToPNGWith7Colors(maskSizeX, maskSizeY, dataMaskSize, "./out/image_s.png", min, TARGET_INTENSITY);
+  // max = getMax(imgMaskSize, maskSizeX * maskSizeY);
+  // min = getMin(imgMaskSize, maskSizeX * maskSizeY);
+  // writeFloatArrayToPNGWithContinuousColor(maskSizeX, maskSizeY, imgMaskSize, "./out/image.png", min, max);
+  // writeFloatArrayToPNGWith7Colors(maskSizeX, maskSizeY, imgMaskSize, "./out/image_s.png", 0, TARGET_INTENSITY);
   
   if (nk > 0) {
 	cout << endl << "-----------------------------------------------------------------" << endl;

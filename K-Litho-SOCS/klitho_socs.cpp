@@ -31,7 +31,6 @@ float getMin(vector<float>& data, int size){
   return min;
 }
 
-
 template <typename T1, typename T2>
 void myShift(vector<T1>& in, vector<T2>& out, int sizeX, int sizeY, bool shiftTypeX, bool shiftTypeY) {
   int sx, sy;
@@ -172,23 +171,22 @@ void FI(vector<T1>& in, int in_sizeX, int in_sizeY, vector<T2>& out, int out_siz
   
 }
 
-void extractMaskRegion(vector<float>& in, vector<float>& out, int ix, int iy, int ox, int oy) {
-  
-  if (ox > ix || oy > iy) {
-	std::cerr << "Error: ox and oy must be less than or equal to ix and iy respectively." << std::endl;
-	return;
+bool extractCentralRegion(vector<float>& in, int inSizeX, int inSizeY, vector<float>& out, int outSizeX, int outSizeY) {
+  if (outSizeX > inSizeX || outSizeY > inSizeY) {
+	std::cerr << "Error: outSizeX and outSizeX must be less than or equal to inSizeX and inSizeY respectively." << std::endl;
+	return false;
   }
-  
   // Compute the starting indices for the center of the in array
-  int startIdxX = ix / 2 - ox / 2;
-  int startIdxY = iy / 2 - oy / 2;
+  int startIdxX = inSizeX / 2 - outSizeX / 2;
+  int startIdxY = inSizeY / 2 - outSizeX / 2;
 
-  // Copy the central ox * oy data from in to out
-  for (int y = 0; y < oy; ++y) {
-	for (int x = 0; x < ox; ++x) {
-	  out[y * ox + x] = in[(startIdxY + y) * ix + (startIdxX + x)];
+  // Copy the central outSizeX * outSizeY data from in to out
+  for (int y = 0; y < outSizeY; ++y) {
+	for (int x = 0; x < outSizeX; ++x) {
+	  out[y * outSizeX + x] = in[(startIdxY + y) * inSizeX + (startIdxX + x)];
 	}
   }
+  return true;
 }
 
 void calcSOCS(vector<float>& image, int Nx, int Ny, int nk, const vector<vector<Complex>>& krns, const vector<float>& scales, const vector<Complex>& msk, int Lx, int Ly, fftw_plan& LxyC2R_plan, vector<Complex>& complexDataLxy, vector<double>& realDataLxy) {
@@ -257,6 +255,7 @@ int main(int argc, char* argv[]) {
   const int maskSizeY = stoi(argv[4]);
   const string maskInFile = argv[5];
   const string KrnDir = argv[6];
+  const float dose = 1.0;
   int Nx, Ny, nk;
   // Validate input parameters
   if (Lx <= 0 || Ly <= 0 || maskSizeX <= 0 || maskSizeY <= 0 || Lx < maskSizeX || Ly < maskSizeY){ 
@@ -348,7 +347,7 @@ int main(int argc, char* argv[]) {
   for (int y = 0; y < maskSizeY; ++y) {
     for (int x = 0; x < maskSizeX; ++x) {
       if (inMsk[y * maskSizeX + x] != 0) {
-        msk[(y + difYh) * Lx + x + difXh] = inMsk[y * maskSizeX + x];
+        msk[(y + difYh) * Lx + x + difXh] = inMsk[y * maskSizeX + x] * dose;
       }
     }
   }
@@ -372,18 +371,21 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   writeFloatArrayToPNGWithContinuousColor(Lx, Ly, img, "./out/image.png", min, max);
-  writeFloatArrayToPNGWith7Colors(Lx, Ly, img, "./out/image_s.png", min, TARGET_INTENSITY);
+  writeFloatArrayToPNGWith7Colors(Lx, Ly, img, "./out/image_s.png", 0, TARGET_INTENSITY);
 
-  // output image only mask region
-  // vector<float> dataMaskSize(maskSizeX * maskSizeY);
-  // extractCentralRegion(img, Lx, Ly, dataMaskSize, maskSizeX, maskSizeY);
-  // if (!writeFloatArrayToBinary("./out/image.bin", img, maskSizeX * maskSizeY)) {
+  //output image only mask region
+  // vector<float> imgMaskSize(maskSizeX * maskSizeY);
+  // extractCentralRegion(img, Lx, Ly, imgMaskSize, maskSizeX, maskSizeY);
+  // if (!writeFloatArrayToBinary("./out/image.bin", imgMaskSize, maskSizeX*maskSizeY)) {
   //   cerr << "Error: Failed to write image data to file: ./out/image.bin" << endl;
   //   return 1;
   // }
-  // writeFloatArrayToPNGWithContinuousColor(maskSizeX, maskSizeY, dataMaskSize, "./out/image.png", min, max);
-  // writeFloatArrayToPNGWith7Colors(maskSizeX, maskSizeY, dataMaskSize, "./out/image_s.png", min, TARGET_INTENSITY);
-
+  // max = getMax(imgMaskSize, maskSizeX * maskSizeY);
+  // min = getMin(imgMaskSize, maskSizeX * maskSizeY);
+  // writeFloatArrayToPNGWithContinuousColor(maskSizeX, maskSizeY, imgMaskSize, "./out/image.png", min, max);
+  // writeFloatArrayToPNGWith7Colors(maskSizeX, maskSizeY, imgMaskSize, "./out/image_s.png", 0, TARGET_INTENSITY);
+  
+  
   auto end = system_clock::now();
   auto dur = end - start;
   auto microsec = duration_cast<chrono::microseconds>(dur).count();
