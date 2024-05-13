@@ -2,7 +2,7 @@
 CXX = g++
 
 # Compile options
-CXXFLAGS = -O2 -Wall
+CXXFLAGS = -O2 -Wall -I../common
 
 # Libraries
 LIBS = -lfftw3 -llapack -lblas
@@ -11,7 +11,7 @@ LIBS = -lfftw3 -llapack -lblas
 TARGET = klitho_tcc
 
 # Source files
-SRCS = klitho_tcc.cpp file_io.cpp
+SRCS = klitho_tcc.cpp ../common/mask.cpp source.cpp ../common/file_io.cpp
 
 # Object files
 OBJS = $(SRCS:.cpp=.o)
