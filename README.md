@@ -47,11 +47,11 @@ You can specify various simulation parameters when running the program.
 
 You can also use text or binary files containing mask transmittance data and source intensity data as input files.
 
-These input files must contain data in Float format. An error will occur if the size of the data written in the file differs from the mask or source size specified at runtime.
+These input files must contain data in Float format.
 
 The "mask" directory contains transmittance data of 1024x1024 for 10 test benches (T1 to T10) provided by ICCAD2013 as examples of input mask data.
 
-When using parametric sources such as annular or dipole, you can set parameters such as inner and outer radii without inputting a source file.
+Without the need for file input, you can utilize masks with Line and Space patterns, as well as parametric sources such as Annular or Dipole shapes by adjusting their parameters.
 
 A sample script for running K-Litho-TCC is provided in "test_tcc.sh". When running this script for the first time, grant execution permission with the following command:
 ```
@@ -111,3 +111,10 @@ This program outputs multiple files. by default, the following files are output:
 
 - `./out/mask.png`: PNG file of the input mask
 - `./out/image.bin`, `./out/image.png`: binary/PNG files of the calculated optical image
+
+
+## Publications
+
+- Masaki KURAMOCHI, Yukihide KOHIRA, Hiroyoshi TANABE, Tetsuaki MATSUNAWA,  Chikaaki KODAMA,
+"Development of a Lithography Simulation Tool Set in Various Optical Conditions for Source Mask Optimization",
+IEEE Access, vol. 12, pp. 58490-58501, 2024. (doi: 10.1109/ACCESS.2024.3390936)  (<a href="https://ieeexplore.ieee.org/document/10504808">IEEE Xplore</a>, <a href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=10504808">paper</a>)
